@@ -91,38 +91,9 @@ class admin_plugin_subfnordconf extends DokuWiki_Admin_Plugin {
         global $lang;
         global $ID;
 
-        ptln('<h1>'.$this->getLang('menu').'</h1>');
-
-        $admin = (is_array($_REQUEST['btng']['admin'])) ? key($_REQUEST['btng']['admin']) : $_REQUEST['btng']['admin'];
-
-        ptln('<div id="subfnordconf">');
-
-        // display link back to dashboard
-        if($admin) {
-            ptln('<div class="level1">');
-            ptln('<p><a href="' . wl($ID, array('do'=>'admin', 'page'=>'subfnordconf')) . '" title="' . $this->getLang('dashboard') . '">&larr; ' . $this->getLang('dashboard') . '</a></p>');
-            ptln('</div>');
-
-        }
-
-        // display search form
-        switch($admin) {
-            case 'vhost_edit':
-                $obj = $this->vhost_by_cid($_REQUEST['btng']['vhost']['cid']);
-                $vhost = $obj->data;
-                if($vhost) {
-                    $this->xhtml_vhost_edit_form($vhost);
-                }
-                break;
-
-            default:
-                // print latest entries/commits
-                printf('<h2>'.$this->getLang('vhost_list').'</h2>', 5);
-                $this->xhtml_vhost_list();
-                break;
-        }
-
-        ptln('</div>');
+        ptln('<div  class="act-admin"><div id="subfnordconf">');
+        $this->xhtml_vhost_list();
+        ptln('</div></div>');
     }/*}}}*/
 
     function xhtml_vhost_list( ) {/*{{{*/

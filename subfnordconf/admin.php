@@ -10,9 +10,6 @@ class admin_plugin_subfnordconf extends DokuWiki_Admin_Plugin {
     function getMenuSort() { return 200; }
     function forAdminOnly() { return false; }
 
-    function admin_plugin_subfnordconf() {
-    }
-
     function handle() {/*{{{*/
         global $lang;
 
@@ -87,10 +84,6 @@ class admin_plugin_subfnordconf extends DokuWiki_Admin_Plugin {
     }/*}}}*/
 
     function html() {/*{{{*/
-        global $conf;
-        global $lang;
-        global $ID;
-
         ptln('<div  class="act-admin"><div id="subfnordconf">');
         $this->xhtml_vhost_list();
         ptln('</div></div>');

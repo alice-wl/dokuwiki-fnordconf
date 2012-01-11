@@ -1,4 +1,4 @@
-<?
+<?php
 // ---------------[ settings for settings ]------------------------------
 $config['format']  = 'php';      // format of setting files, supported formats: php
 $config['varname'] = 'conf';     // name of the config variable, sans $

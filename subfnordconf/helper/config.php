@@ -93,5 +93,9 @@ require_once(CONF_SELF.'settings/extra.class.php');   // settings classes specif
         $this->_loaded = true;
 
     }
+    function isSingleton() {
+        return false;
+    }
+
 
 }

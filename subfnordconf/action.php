@@ -1,4 +1,4 @@
-<?
+<?php
 /** vhostconfig
  * changes config based on vhost 
  *
@@ -33,14 +33,19 @@ class action_plugin_subfnordconf extends DokuWiki_Action_Plugin {
       $this->config_path = DOKU_CONF;
       $this->config_prefix = 'subfnordconf_';
 
-      if( strpos( $domain, '.' )) {
-	$subdomain    = substr( $domain, 0, strpos( $domain, '.' ));
-      } else {
-	$subdomain    = $domain;
+      while( $domain && !$subdomain ) {
+          $conf_file = $this->config_path.$this->config_prefix.$domain.'.php';
+          if( !file_exists( $conf_file )) {
+              if( strpos( $domain, '.' )) {
+                  $domain = substr( $domain, 0, strrpos( $domain, '.' ));
+              } else {
+                  $subdomain = $domain;
+              }
+          } else {
+              $subdomain = $domain;
+          }
       }
 
-#      $sconf   = $this->getConf( $subdomain );
-      $conf_file = $this->config_path.$this->config_prefix.$subdomain.'.php';
       if( file_exists( $conf_file )) {
           require_once( $conf_file );
           $sconf = $conf;
@@ -145,7 +150,6 @@ class action_plugin_subfnordconf extends DokuWiki_Action_Plugin {
 
   function override_template(  $conf_override ) {/*{{{*/
 
-
     $t = plugin_load( 'action', 'templatefnordhelper' );
     if( $t ) {
       $t->tpl_switch( $conf_override['template'] );
@@ -186,6 +190,7 @@ class action_plugin_subfnordconf extends DokuWiki_Action_Plugin {
     global $ID,$INFO,$conf;
 
     $path = explode( ':', $ID );
+    if( !$conf_override['ns'] ) { return ''; }
     if( count( $path ) > 1 && $path[0] == $conf_override['ns'] ) { return ''; }
 
     $file = wikiFN($ID);

@@ -1,6 +1,13 @@
 <?php
 if(!defined('DOKU_INC')) die();
+
 class action_plugin_templatefnordhelper_templateaction extends DokuWiki_Action_Plugin {
+
+  function getInfo(){
+    return array(
+        'author' => 'ai',
+    );
+  }
 
   function register(&$controller) {/*{{{*/
 
@@ -33,7 +40,7 @@ class action_plugin_templatefnordhelper_templateaction extends DokuWiki_Action_P
         $this->save_session( 'template', $tpl );
     }
     if( isset( $_GET['utpl'] ) && $_GET['utpl'] == "" ) {
-	$tpl = $conf['default_tpl']; 
+	$tpl = ""; 
         $this->save_session( 'template', $tpl );
 	$switch = false;
     }
@@ -89,7 +96,7 @@ class action_plugin_templatefnordhelper_templateaction extends DokuWiki_Action_P
     if( $conf['template'] == $tpl ) { return ''; }
 
   // prevent userstyle from beeing overwritten ... one or the other way 
-    if( $this->u['template'] ) { return ''; }
+    if( $this->get_user( 'template' )) { return ''; }
     if( preg_match( '/^[\w-]+$/', $tpl )) {
 	    $this->_switch( $tpl );
     }

@@ -150,7 +150,7 @@ class action_plugin_subfnordconf extends DokuWiki_Action_Plugin {
 
   function override_template(  $conf_override ) {/*{{{*/
 
-    $t = plugin_load( 'action', 'templatefnordhelper' );
+    $t = plugin_load( 'action', 'templatefnordhelper_templateaction' );
     if( $t ) {
       $t->tpl_switch( $conf_override['template'] );
     }

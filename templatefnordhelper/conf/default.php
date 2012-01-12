@@ -1,2 +1,2 @@
 <?php
-$conf['base_tpl'] = 'base';
+$conf['base_tpl'] = '';

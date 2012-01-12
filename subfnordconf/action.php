@@ -11,6 +11,8 @@ if(!defined('DOKU_PLUGIN')) define('DOKU_PLUGIN',DOKU_INC.'lib/plugins/');
 require_once(DOKU_PLUGIN.'action.php');
 class action_plugin_subfnordconf extends DokuWiki_Action_Plugin {
 
+  var $sconf = array( );
+
   function getInfo(){
     return array(
         'author' => 'ai',
@@ -24,11 +26,18 @@ class action_plugin_subfnordconf extends DokuWiki_Action_Plugin {
 
     function register(&$controller) {/*{{{*/
       $controller->register_hook('ACTION_ACT_PREPROCESS', 'BEFORE',  $this, 'check_vhost' );
+      $controller->register_hook('TPL_ACT_RENDER', 'BEFORE',  $this, 'check_act' );
     }/*}}}*/
 
-    function check_vhost(&$event, $param) {/*{{{*/
-      global $ACT, $INFO;
-      $domain	    = $_SERVER['HTTP_HOST'];
+    function read_config( $domain ) {/*{{{*/
+      if( !$domain ) { return false; }
+
+      if( isset( $this->sconf[$domain] )) { 
+          return $this->sconf[$domain];
+      } else {
+          $this->sconf[$domain] = array( );
+          $conf = &$this->sconf[$domain];
+      }
 
       $this->config_path = DOKU_CONF;
       $this->config_prefix = 'subfnordconf_';
@@ -47,8 +56,18 @@ class action_plugin_subfnordconf extends DokuWiki_Action_Plugin {
       }
 
       if( file_exists( $conf_file )) {
-          require_once( $conf_file );
-          $sconf = $conf;
+          require_once( $conf_file ); // filling $conf
+      }
+
+      return $conf;
+    }/*}}}*/
+
+    function check_vhost(&$event, $param) {/*{{{*/
+      global $ACT, $INFO;
+      $domain	    = $_SERVER['HTTP_HOST'];
+
+      $sconf = $this->read_config( $domain );
+      if( is_array( $sconf )) {
         // register
           if($ACT == 'register' && $_POST['save'] ) {
               if( $this->override_register( $sconf)) {
@@ -60,10 +79,34 @@ class action_plugin_subfnordconf extends DokuWiki_Action_Plugin {
 	// default_page
 	  $this->override_defaultpage( $sconf );  // 
 	  $this->override_template( $sconf );  // 
-	  $this->override_new( $sconf );  // 
+	  $this->override_namespace( $sconf );  // 
 
 	  $this->override_conf( $sconf );  // 
 	// template
+      }
+    }/*}}}*/
+
+    function check_act(&$event, $param) {/*{{{*/
+      global $conf, $ACT, $INFO;
+      $domain	    = $_SERVER['HTTP_HOST'];
+
+      $sconf = $this->read_config( $domain );
+      if( $ACT == 'index' && $sconf['ns'] ) {
+        
+        $dir = $conf['datadir'];                                           
+        $ns  = cleanID($ns);                                               
+        $ns  = utf8_encodeFN(str_replace(':','/',$ns));                    
+                                                                       
+        echo p_locale_xhtml('index');                                      
+        echo '<div id="index__tree">';                                     
+                                                                       
+        $data = array();                                                   
+        search($data,$conf['datadir'],'search_index',array('ns' => $ns), $sconf['ns'] );
+        echo html_buildlist($data,'idx','html_list_index','html_li_index');
+                                                                       
+        echo '</div>';                                                     
+        $event->preventDefault();
+
       }
     }/*}}}*/
 
@@ -158,19 +201,6 @@ class action_plugin_subfnordconf extends DokuWiki_Action_Plugin {
 
   }/*}}}*/
 
-/*
-  function tpl_loadConfig( $tpl ){
-  
-    #$file = DOKU_TPLINC.'../'.$tpl.'/conf/default.php';
-    $file = '/var/www/farming/domains/wl.cx/tpl/eh2010/conf/default.php';
-    $conf = array();
-    if (!@file_exists($file)) return false;
-    
-    include($file);
-    return $conf;
-  } 
- */
-
   function override_defaultpage(  $conf_override ) {/*{{{*/
     global $ID,$INFO,$conf;
 
@@ -186,15 +216,14 @@ class action_plugin_subfnordconf extends DokuWiki_Action_Plugin {
     }
   }/*}}}*/
 
-  function override_new(  $conf_override ) {/*{{{*/
+  function override_namespace(  $conf_override ) {/*{{{*/
     global $ID,$INFO,$conf;
-
     $path = explode( ':', $ID );
     if( !$conf_override['ns'] ) { return ''; }
     if( count( $path ) > 1 && $path[0] == $conf_override['ns'] ) { return ''; }
 
     $file = wikiFN($ID);
-    if( file_exists( $file )) { return ''; }
+    #if( file_exists( $file )) { return ''; }       // why was this here?
 
     $ID	    = $conf_override['ns'].':'.$ID;;
     $NS     = getNS($ID);
@@ -202,6 +231,50 @@ class action_plugin_subfnordconf extends DokuWiki_Action_Plugin {
     $JSINFO['id']        = $ID;
     $INFO['namespace'] = (string) $INFO['namespace'];
     if ($conf['breadcrumbs']) breadcrumbs();
+
+  }/*}}}*/
+
+  function override_index(  $conf_override ) {/*{{{*/
+    global $ID,$INFO,$conf;
+    $path = explode( ':', $ID );
+    if( !$conf_override['ns'] ) { return ''; }
+    if( count( $path ) > 1 && $path[0] == $conf_override['ns'] ) { return ''; }
+
+    $file = wikiFN($ID);
+    #if( file_exists( $file )) { return ''; }       // why was this here?
+
+    $dir = $conf['datadir'];                                           
+    $ns  = cleanID($ns);                                               
+
+#    #fixme use appropriate function                                    
+#    if(empty($ns)){                                                    
+#        $ns = dirname(str_replace(':','/',$ID));                       
+#        if($ns == '.') $ns ='';                                        
+#    }                                                                  
+    $dir = $conf['datadir'];                                           
+    $ns  = cleanID($ns);                                               
+    $ns  = utf8_encodeFN(str_replace(':','/',$ns));                    
+                                                                       
+    echo p_locale_xhtml('index');                                      
+    echo '<div id="index__tree">';                                     
+                                                                       
+    $data = array();                                                   
+    search($data,$conf['datadir'],'search_index',array('ns' => $ns),'dw');
+echo "<pre>";                                                                                                                                    
+print_r( $data );                                                      
+echo "</pre>";                                                         
+    echo html_buildlist($data,'idx','html_list_index','html_li_index');
+                                                                       
+    echo '</div>';                                                     
+
+exit;
+
+#    $ID	    = $conf_override['ns'].':'.$ID;;
+#    $NS     = getNS($ID);
+#    $INFO = pageinfo();
+#    $JSINFO['id']        = $ID;
+#    $INFO['namespace'] = (string) $INFO['namespace'];
+#    if ($conf['breadcrumbs']) breadcrumbs();
 
   }/*}}}*/
 

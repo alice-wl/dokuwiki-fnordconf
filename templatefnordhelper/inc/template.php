@@ -31,12 +31,12 @@ function tpl_youarehere_lv($sep=' &raquo; '){
   global $lang;
   
   // check if enabled
-  if(!$conf['youarehere']) return false;
+  //if(!$conf['youarehere']) return false;
   
   $parts = explode(':', $ID);
   $count = count($parts);
   
-  echo '<span class="bchead">'.$lang['youarehere'].'</span>&nbsp;';
+  echo '<span class="bchead">&nbsp;</span>&nbsp;';
   if( $count > 1 ) {                                                                                                                                                            
 
      // always print the startpage
@@ -96,3 +96,15 @@ function tpl_userinfo_lv(){
     }
     return false;
 }
+function tpl_sidebar_lv( ){/*{{{*/
+$sb='sidebar';
+            $data = p_wiki_xhtml($sb,'',false);                                                                                               
+       if(auth_quickaclcheck($sb) >= AUTH_EDIT) {
+            $data .= '<div class="secedit">'.html_btn('secedit',$sb,'',array('do'=>'edit','rev'=>'','post')).'</div>';
+        }
+        $data = preg_replace('/<div class="toc">.*?(<\/div>\n<\/div>)/s', '', $data);
+/*
+        #$data = preg_replace('/(<h.*?><a.*?name=")(.*?)(".*?id=")(.*?)(">.*?<\/a><\/h.*?>)/','\1sb_'.$pos.'_\2\3sb_'.$pos.'_\4\5', $data);
+*/
+
+}/*}}}*/ 

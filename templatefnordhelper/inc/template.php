@@ -25,7 +25,7 @@ function tpl_include( $file, $t=false, $allowphp=true ) {
 }
 
 // you are here less verbose 
-function tpl_youarehere_lv($sep=' &raquo; '){
+function tpl_youarehere_lv($sep=' &raquo; '){/*{{{*/
   global $conf;
   global $ID;
   global $lang;
@@ -84,7 +84,7 @@ function tpl_youarehere_lv($sep=' &raquo; '){
   }
   
   return true;
-}
+}/*}}}*/
 
 // userinfo less verbose
 function tpl_userinfo_lv(){
@@ -96,15 +96,36 @@ function tpl_userinfo_lv(){
     }
     return false;
 }
-function tpl_sidebar_lv( ){/*{{{*/
-$sb='sidebar';
-            $data = p_wiki_xhtml($sb,'',false);                                                                                               
+function tpl_topbar_lv( ){/*{{{*/
+        global $INFO;
+
+        $sb=':'.$INFO['namespace'].':topbar';
+
+        $data = p_wiki_xhtml($sb,'',false);                                                                                               
        if(auth_quickaclcheck($sb) >= AUTH_EDIT) {
             $data .= '<div class="secedit">'.html_btn('secedit',$sb,'',array('do'=>'edit','rev'=>'','post')).'</div>';
         }
         $data = preg_replace('/<div class="toc">.*?(<\/div>\n<\/div>)/s', '', $data);
+
+        echo $data;
 /*
         #$data = preg_replace('/(<h.*?><a.*?name=")(.*?)(".*?id=")(.*?)(">.*?<\/a><\/h.*?>)/','\1sb_'.$pos.'_\2\3sb_'.$pos.'_\4\5', $data);
 */
+
+}/*}}}*/ 
+function tpl_sidebar_lv( ){/*{{{*/
+return;
+    global $INFO;
+
+        $sb=':'.$INFO['namespace'].':topbar';
+        $data = p_wiki_xhtml($sb,'',false);                                                                                               
+        if(auth_quickaclcheck($sb) >= AUTH_EDIT) {
+            $data .= '<div class="secedit">'.html_btn('secedit',$sb,'',array('do'=>'edit','rev'=>'','post')).'</div>';
+         }
+         $data = preg_replace('/<div class="toc">.*?(<\/div>\n<\/div>)/s', '', $data);
+/*
+        #$data = preg_replace('/(<h.*?><a.*?name=")(.*?)(".*?id=")(.*?)(">.*?<\/a><\/h.*?>)/','\1sb_'.$pos.'_\2\3sb_'.$pos.'_\4\5', $data);
+*/
+         echo $data;
 
 }/*}}}*/ 

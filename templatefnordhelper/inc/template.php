@@ -113,7 +113,7 @@ function tpl_topbar_lv( ){/*{{{*/
 */
 
 }/*}}}*/ 
-function tpl_topbar() {
+function tpl_topfnord() {
     global $ID;
 
     $found = false;

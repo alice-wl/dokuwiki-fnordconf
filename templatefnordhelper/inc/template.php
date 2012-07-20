@@ -113,6 +113,33 @@ function tpl_topbar_lv( ){/*{{{*/
 */
 
 }/*}}}*/ 
+function tpl_topbar() {
+    global $ID;
+
+    $found = false;
+    $tbar  = '';
+    $path  = explode(':', $ID);
+
+    while(!$found && count($path) >= 0) {
+        $tbar = implode(':', $path) . ':' . 'topbar';
+        $found = @file_exists(wikiFN($tbar));
+        array_pop($path);
+        // check if nothing was found
+        if(!$found && $tbar == ':topbar') return;
+    }
+
+    if($found && auth_quickaclcheck($tbar) >= AUTH_READ) {
+    	print '<div id="menu">';
+        print p_wiki_xhtml($tbar,'',false);
+	print "</div>";
+    }
+}
+
+// translation plugin
+function tpl_translation() {
+  $translation = &plugin_load('syntax','translation');
+	echo $translation->_showTranslations();
+}
 function tpl_sidebar_lv( ){/*{{{*/
 return;
     global $INFO;

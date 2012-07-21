@@ -136,10 +136,10 @@ function tpl_topfnord() {
 }
 
 // translation plugin
-function tpl_translation() {
-  $translation = &plugin_load('syntax','translation');
-	echo $translation->_showTranslations();
-}
+#function tpl_translation() {
+#  $translation = &plugin_load('syntax','translation');
+#	echo $translation->_showTranslations();
+#}
 function tpl_sidebar_lv( ){/*{{{*/
 return;
     global $INFO;

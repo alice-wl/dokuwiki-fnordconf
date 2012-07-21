@@ -73,7 +73,7 @@ function css_out_tfh(){
     // load core styles
     // compatibility with 2010-11-07a
     if(!isset($_REQUEST['s'])) {
-        $files[DOKU_INC.'lib/styles/style.css'] = DOKU_BASE.'lib/styles/';   
+        $files[DOKU_INC.'lib/styles/style.css'] = DOKU_BASE.'lib/styles/';    // compatibility with 2010-11-07a
     }
 
     $files[DOKU_INC.'lib/styles/'.$mediatype.'.css'] = DOKU_BASE.'lib/styles/';
@@ -104,7 +104,7 @@ function css_out_tfh(){
     }
 
     $cache_files = array_merge(array_keys($files), getConfigFiles('main'));
-    $cache_files[] = $style_ini;
+    $cache_files[] = $tplinc.$style_ini;
     $cache_files[] = __FILE__;
 
 

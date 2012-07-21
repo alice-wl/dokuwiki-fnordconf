@@ -53,7 +53,7 @@ function css_out_tfh(){
     $cache .= $tpl;
 
     // The generated script depends on some dynamic options
-    $cache = new cache('styles'.$_SERVER['HTTP_HOST'].$_SERVER['SERVER_PORT'].DOKU_BASE.$cache.$mediatype,'.css');
+    $cache = getCacheName('styles'.$_SERVER['HTTP_HOST'].$_SERVER['SERVER_PORT'].DOKU_BASE.$cache.$mediatype,'.css');
 
     // load template styles
     $tplstyles = array();
@@ -66,14 +66,19 @@ function css_out_tfh(){
             }
         }
     }
+#    if(@file_exists($tplinc.'style.ini')){
+#        $ini = parse_ini_file($tplinc.'style.ini',true);
+#        foreach($ini['stylesheets'] as $file => $mode){
+#            $tplstyles[$mode][$tplinc.$file] = $tpldir;
+#        }
+#    }
 
     // Array of needed files and their web locations, the latter ones
     // are needed to fix relative paths in the stylesheets
     $files   = array();
-    // load core styles
-    // compatibility with 2010-11-07a
+
     if(!isset($_REQUEST['s'])) {
-        $files[DOKU_INC.'lib/styles/style.css'] = DOKU_BASE.'lib/styles/';    // compatibility with 2010-11-07a
+        $files[DOKU_INC.'lib/styles/style.css'] = DOKU_BASE.'lib/styles/';   // compatibility with 2010-11-07a
     }
 
     $files[DOKU_INC.'lib/styles/'.$mediatype.'.css'] = DOKU_BASE.'lib/styles/';
@@ -97,6 +102,9 @@ function css_out_tfh(){
     // @todo: this currently adds the rtl styles only to the 'screen' media type
     //        but 'print' and 'all' should also be supported
 
+    if( !$mediatype ) { 
+        $mediatype = 'screen';
+    }
     if ($mediatype=='screen') {
         if($lang['direction'] == 'rtl'){
             if (isset($tplstyles['rtl'])) $files = array_merge($files, $tplstyles['rtl']);
@@ -104,14 +112,57 @@ function css_out_tfh(){
     }
 
     $cache_files = array_merge(array_keys($files), getConfigFiles('main'));
-    $cache_files[] = $tplinc.$style_ini;
+    $cache_files[] = $tplinc.'style.ini';
     $cache_files[] = __FILE__;
 
 
+
+
+
+#    //if (isset($tplstyles['all'])) $files = array_merge($files, $tplstyles['all']);
+#    if(!empty($style)){
+#        $files[DOKU_INC.'lib/styles/'.$style.'.css'] = DOKU_BASE.'lib/styles/';
+#        // load plugin, template, user styles
+#        $files = array_merge($files, css_pluginstyles($style));
+#        if (isset($tplstyles[$style])) $files = array_merge($files, $tplstyles[$style]);
+#        elseif (isset($tplstyles['screen'])) $files = array_merge($files, $tplstyles['screen']); // FIX
+#
+#        if(isset($config_cascade['userstyle'][$style])){
+#            $files[$config_cascade['userstyle'][$style]] = DOKU_BASE;
+#        }
+#    }else{
+#        $files[DOKU_INC.'lib/styles/style.css'] = DOKU_BASE.'lib/styles/';
+#        // load plugin, template, user styles
+#        $files = array_merge($files, css_pluginstyles('screen'));
+#        if (isset($tplstyles['screen'])) $files = array_merge($files, $tplstyles['screen']);
+#        if($lang['direction'] == 'rtl'){
+#            if (isset($tplstyles['rtl'])) $files = array_merge($files, $tplstyles['rtl']);
+#        }
+#        if(isset($config_cascade['userstyle']['default'])){
+#            $files[$config_cascade['userstyle']['default']] = DOKU_BASE;
+#        }
+#    }
+
     // check cache age & handle conditional request
-    // This may exit if a cache can be used
-    http_cached($cache->cache,
-                $cache->useCache(array('files' => $cache_files)));
+    header('Cache-Control: public, max-age=3600');
+    header('Pragma: public');
+    if(css_cacheok_tfh($cache,array_merge( array_keys($files)), css_getpath( $tpl, 'style.ini' ))){     //added style.init
+        http_conditionalRequest(filemtime($cache));
+        if($conf['allowdebug']) header("X-CacheUsed: $cache");
+
+        // finally send output
+        if ($conf['gzip_output'] && http_gzip_valid($cache)) {
+          header('Vary: Accept-Encoding');
+          header('Content-Encoding: gzip');
+          readfile($cache.".gz");
+        } else {
+          if (!http_sendfile($cache)) readfile($cache);
+        }
+
+        return;
+    } else {
+        http_conditionalRequest(time());
+    }
 
     // start output buffering and build the stylesheet
     ob_start();
@@ -132,24 +183,51 @@ function css_out_tfh(){
     // apply style replacements
     $css = css_applystyle_tfh($css,$tpl);   // removed tplinc
 
-    // place all @import statements at the top of the file
-    $css = css_moveimports($css);
-
-
     // compress whitespace and comments
     if($conf['compress']){
         $css = css_compress($css);
     }
 
-    // embed small images right into the stylesheet
-    if($conf['cssdatauri']){
-        $base = preg_quote(DOKU_BASE,'#');
-        $css = preg_replace_callback('#(url\([ \'"]*)('.$base.')(.*?(?:\.(png|gif)))#i','css_datauri',$css);
-    }
+    // save cache file
+    io_saveFile($cache,$css);
+    if(function_exists('gzopen')) io_saveFile("$cache.gz",$css);
 
-    http_cached_finish( $cache->cache, $css);
+    // finally send output
+    if ($conf['gzip_output']) {
+      header('Vary: Accept-Encoding');
+      header('Content-Encoding: gzip');
+      print gzencode($css,9,FORCE_GZIP);
+    } else {
+      print $css;
+    }
 }
 
+/**
+ * Checks if a CSS Cache file still is valid
+ *
+ * @author Andreas Gohr <andi@splitbrain.org>
+ */
+function css_cacheok_tfh($cache,$files,$style_ini){
+    global $config_cascade;
+
+    if(isset($_REQUEST['purge'])) return false; //support purge request
+
+    $ctime = @filemtime($cache);
+    if(!$ctime) return false; //There is no cache
+
+    // some additional files to check
+    $files = array_merge($files, getConfigFiles('main'));
+    if( $style_ini ) $files[] = $style_ini;     // remoted tplinc
+    $files[] = __FILE__;
+
+    // now walk the files
+    foreach($files as $file){
+        if(@filemtime($file) > $ctime){
+            return false;
+        }
+    }
+    return true;
+}
 
 /**
  * Does placeholder replacements in the style according to
@@ -166,6 +244,15 @@ function css_applystyle_tfh($css, $tpl ){
     $ini = parse_ini_file( $file, true);
     $css = strtr($css,$ini['replacements']);
 
+    // #TODO  
+    // implement logic to overwrite deffinitions ? would be nice to inherit style replacements
+    // this affects cache 
+      #global $conf;
+
+#    if(@file_exists($tpldir.'style.ini')){
+#        $ini = parse_ini_file($tpldir.'style.ini',true);
+#        $css = strtr($css,$ini['replacements']);
+#    }
     return $css;
 }
 

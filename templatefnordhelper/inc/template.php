@@ -1,5 +1,6 @@
 <?php
-function tpl_include( $file, $t=false, $allowphp=true ) {
+// use configpath to include files from cascade config_path 
+function tpl_include( $file, $t=false, $allowphp=true ) {/*{{{*/
     global $conf, $ID, $INFO;
     static $included_templates;
     if( !is_array( $included_templates )) $included_templates = array( );
@@ -22,9 +23,9 @@ function tpl_include( $file, $t=false, $allowphp=true ) {
     }
     return $include;
 
-}
+}/*}}}*/
 
-// you are here less verbose 
+// some less verbose  variations
 function tpl_youarehere_lv($sep=' &raquo; '){/*{{{*/
   global $conf;
   global $ID;
@@ -85,9 +86,7 @@ function tpl_youarehere_lv($sep=' &raquo; '){/*{{{*/
   
   return true;
 }/*}}}*/
-
-// userinfo less verbose
-function tpl_userinfo_lv(){
+function tpl_userinfo_lv(){/*{{{*/
     global $lang;
     global $INFO;
     if(isset($_SERVER['REMOTE_USER'])){
@@ -95,7 +94,7 @@ function tpl_userinfo_lv(){
         return true;
     }
     return false;
-}
+}/*}}}*/
 function tpl_topbar_lv( ){/*{{{*/
         global $INFO;
 
@@ -113,6 +112,8 @@ function tpl_topbar_lv( ){/*{{{*/
 */
 
 }/*}}}*/ 
+
+// include topar
 function tpl_topfnord() {
     global $ID;
 
@@ -125,14 +126,23 @@ function tpl_topfnord() {
         $found = @file_exists(wikiFN($tbar));
         array_pop($path);
         // check if nothing was found
-        if(!$found && $tbar == ':topbar') return;
+        if(!$found && $tbar == ':topbar') break;
     }
 
-    if($found && auth_quickaclcheck($tbar) >= AUTH_READ) {
+    if( auth_quickaclcheck($tbar) >= AUTH_READ) {
     	print '<div id="menu">';
-        print p_wiki_xhtml($tbar,'',false);
+        if( $found ) {
+            print p_wiki_xhtml($tbar,'',false);
+        }
+        print '<div id="control"><p>';
+        if( auth_quickaclcheck( $ID ) >= AUTH_EDIT ) {  // not showing source button 
+              tpl_action( 'edit', 1 );
+              tpl_action( 'admin', 1 );
+        }
+        print '</p></div>';
 	print "</div>";
     }
+
 }
 
 // translation plugin
